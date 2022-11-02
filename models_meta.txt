@@ -1,0 +1,7 @@
+> DNN
+2022-11-02 20:34:39.930704: W tensorflow/python/util/util.cc:348] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+WARNING:absl:Function `_wrapped_model` contains input name(s) cat_City, cat_District, cat_Street, cat_Community, cat_Floor with unsupported characters which will be renamed to cat_city, cat_district, cat_street, cat_community, cat_floor in the SavedModel.
+INFO:tensorflow:Assets written to: models/dnn/assets
+INFO:tensorflow:Assets written to: models/dnn/assets
+
+> 

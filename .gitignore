@@ -1,0 +1,7 @@
+.vscode
+catboost_info
+dataset
+__pycache__
+logs
+mlruns
+models
