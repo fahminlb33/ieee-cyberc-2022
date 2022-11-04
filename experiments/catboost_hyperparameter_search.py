@@ -57,7 +57,7 @@ def objective(trial: optuna.Trial) -> float:
         trial.suggest_categorical('grow_policy',
                                   ["SymmetricTree", "Depthwise"]),
         "l2_leaf_reg":
-        trial.suggest_discrete_uniform('l2_leaf_reg', 1.0, 5.5, 0.5),
+        trial.suggest_float('l2_leaf_reg', 1.0, 5.5, 0.5),
         "depth":
         trial.suggest_int("depth", 6, 15),
         "boosting_type":
@@ -112,6 +112,8 @@ def objective(trial: optuna.Trial) -> float:
 if __name__ == "__main__":
     study = optuna.create_study(study_name="catboost_hyperparam",
                                 directions=["minimize", "maximize"])
+    print(f"Sampler is {study.sampler.__class__.__name__}")
+
     study.optimize(objective,
                    n_trials=50,
                    timeout=None,
