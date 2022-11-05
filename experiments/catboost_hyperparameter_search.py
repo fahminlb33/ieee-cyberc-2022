@@ -63,28 +63,43 @@ def objective(trial: optuna.Trial) -> float:
 
     # create dataset pool
     train_pool = Pool(df_train_p["X"],
-                        df_train_p["y"],
-                        cat_features=df_train_p["cat_names_index"], timestamp=df_train_p["timestamp"])
+                      df_train_p["y"],
+                      cat_features=df_train_p["cat_names_index"],
+                      timestamp=df_train_p["timestamp"])
     test_pool = Pool(df_test_p["X"],
-                        df_test_p["y"],
-                        cat_features=df_test_p["cat_names_index"], timestamp=df_test_p["timestamp"])
+                     df_test_p["y"],
+                     cat_features=df_test_p["cat_names_index"],
+                     timestamp=df_test_p["timestamp"])
 
     # train parameters
     train_params = {
-        "has_time": True,
-        "random_seed": 42,
-        "task_type": "GPU",
-        "iterations": 1000,
-        "loss_function": "RMSE",
-        "depth": trial.suggest_int("depth", 8, 16),
-        "l2_leaf_reg": trial.suggest_float('l2_leaf_reg', 1.0, 5.5, step=0.5),
-        "border_count": trial.suggest_categorical("border_count", [128, 254]),
-        "grow_policy": trial.suggest_categorical('grow_policy', ["SymmetricTree", "Depthwise"]),
-        "bootstrap_type": trial.suggest_categorical("bootstrap_type", ["Bayesian", "Bernoulli", "MVS"]),
+        "has_time":
+        True,
+        "random_seed":
+        42,
+        "task_type":
+        "GPU",
+        "iterations":
+        1000,
+        "loss_function":
+        "RMSE",
+        "depth":
+        trial.suggest_int("depth", 8, 16),
+        "l2_leaf_reg":
+        trial.suggest_float('l2_leaf_reg', 1.0, 5.5, step=0.5),
+        "border_count":
+        trial.suggest_categorical("border_count", [128, 254]),
+        "grow_policy":
+        trial.suggest_categorical('grow_policy',
+                                  ["SymmetricTree", "Depthwise"]),
+        "bootstrap_type":
+        trial.suggest_categorical("bootstrap_type",
+                                  ["Bayesian", "Bernoulli", "MVS"]),
     }
 
     if train_params["bootstrap_type"] == "Bayesian":
-        train_params["bagging_temperature"] = trial.suggest_float("bagging_temperature", 0, 10)
+        train_params["bagging_temperature"] = trial.suggest_float(
+            "bagging_temperature", 0, 10)
     elif train_params["bootstrap_type"] == "Bernoulli":
         train_params["subsample"] = trial.suggest_float("subsample", 0.1, 1)
 
@@ -100,8 +115,10 @@ def objective(trial: optuna.Trial) -> float:
     y_true_unscaled = df_test["Price"].values.reshape(-1, 1)
 
     # save model artifact
-    feature_importances = dict(zip(df_train_p["columns"], model.feature_importances_))
-    mlflow.log_text(json.dumps(feature_importances), "feature_importances.json")
+    feature_importances = dict(
+        zip(df_train_p["columns"], model.feature_importances_))
+    mlflow.log_text(json.dumps(feature_importances),
+                    "feature_importances.json")
     mlflow.log_text(json.dumps(model.get_all_params()), "model_params.json")
 
     # save plots
@@ -109,7 +126,9 @@ def objective(trial: optuna.Trial) -> float:
     mlflow.log_figure(fig_scatter, "scatterplot.png")
     plt.close(fig_scatter)
 
-    fig_scatter = plot_scatterplot(y_true_unscaled, predicted_unscaled, logy=True)
+    fig_scatter = plot_scatterplot(y_true_unscaled,
+                                   predicted_unscaled,
+                                   logy=True)
     mlflow.log_figure(fig_scatter, "scatterplot-log.png")
     plt.close(fig_scatter)
 
@@ -141,7 +160,9 @@ if __name__ == "__main__":
     print("Number of finished trials: {}".format(len(study.trials)))
     print(f"Number of trials on the Pareto front: {len(study.best_trials)}")
 
-    optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
+    optuna.visualization.plot_pareto_front(study,
+                                           target_names=["FLOPS", "accuracy"])
 
-    optuna.visualization.plot_param_importances(study, target=lambda t: t.values[0], target_name="MAE")
-
+    optuna.visualization.plot_param_importances(study,
+                                                target=lambda t: t.values[0],
+                                                target_name="MAE")

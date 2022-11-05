@@ -35,6 +35,7 @@ def find_dataset_paths(dataset_path: str) -> tuple[str, str]:
 
     return train_path, test_path
 
+
 if __name__ == "__main__":
     # create CLI parser
     cli_parser = argparse.ArgumentParser(description='CatBoost Experiments')
@@ -70,7 +71,7 @@ if __name__ == "__main__":
     print("Loading data...")
     df_train = pd.read_csv(train_path, parse_dates=["Time"])
     df_test = pd.read_csv(test_path, parse_dates=["Time"])
-    
+
     # preprocess data
     print("Preprocessing data...")
     preprocessor = DataPreprocessorV2(
@@ -86,11 +87,13 @@ if __name__ == "__main__":
 
     # create dataset pool
     train_pool = Pool(df_train_p["X"],
-                        df_train_p["y"],
-                        cat_features=df_train_p["cat_names_index"], timestamp=df_train_p["timestamp"])
+                      df_train_p["y"],
+                      cat_features=df_train_p["cat_names_index"],
+                      timestamp=df_train_p["timestamp"])
     test_pool = Pool(df_test_p["X"],
-                        df_test_p["y"],
-                        cat_features=df_test_p["cat_names_index"], timestamp=df_test_p["timestamp"])
+                     df_test_p["y"],
+                     cat_features=df_test_p["cat_names_index"],
+                     timestamp=df_test_p["timestamp"])
 
     # --- step 3 - run training
     # create profile
@@ -122,25 +125,26 @@ if __name__ == "__main__":
     predicted = model.predict(test_pool)
     predicted_unscaled = preprocessor.unscale_price(predicted.reshape(-1, 1))
     y_true_unscaled = df_test["Price"].values.reshape(-1, 1)
-    
+
     # calculate metrics
 
     # print metrics and params
     print("Metrics:")
     print_metrics(y_true_unscaled, predicted_unscaled)
-    
+
     out_path = os.path.join(args.output_path, "metrics.json")
     with open(out_path, "w") as f:
         metrics = calculate_metrics(y_true_unscaled, predicted_unscaled)
         json.dump(metrics, f)
-    
+
     out_path = os.path.join(args.output_path, "model_params.json")
     with open(out_path, "w") as f:
         json.dump(model.get_all_params(), f)
-    
+
     out_path = os.path.join(args.output_path, "feature_importances.json")
     with open(out_path, "w") as f:
-        feature_importances = dict(zip(df_train_p["columns"], model.feature_importances_))
+        feature_importances = dict(
+            zip(df_train_p["columns"], model.feature_importances_))
         json.dump(feature_importances, f)
 
     # save predictions
@@ -150,7 +154,8 @@ if __name__ == "__main__":
         "y_true": df_test["Price"],
         "y_pred": predicted_unscaled.flatten()
     })
-    df_pred.to_csv(os.path.join(args.output_path, "predictions.csv"), index=False)
+    df_pred.to_csv(os.path.join(args.output_path, "predictions.csv"),
+                   index=False)
 
     # plot scatterplot
     fig = plot_all(y_true_unscaled, predicted_unscaled, max_ticks=6)

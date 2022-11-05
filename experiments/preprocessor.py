@@ -101,10 +101,11 @@ class DataPreprocessorV2:
 
                 inliers_index = df_pool["Id"].values[np.ravel(iqr_indexes)]
                 df_pool = df_pool[df_pool["Id"].isin(inliers_index)]
-            
+
             # drop unused columns
             if len(self.drop_columns) > 0:
-                df_pool = df_pool.drop(columns=self.drop_columns, errors="ignore")
+                df_pool = df_pool.drop(columns=self.drop_columns,
+                                       errors="ignore")
 
             # drop nulls
             if self.drop_nulls:
@@ -116,11 +117,14 @@ class DataPreprocessorV2:
         else:
             # drop unused columns
             if len(self.drop_columns) > 0:
-                df_pool = df_pool.drop(columns=self.drop_columns, errors="ignore")
+                df_pool = df_pool.drop(columns=self.drop_columns,
+                                       errors="ignore")
 
             # fill nulls regardless
             if self.drop_nulls or self.fill_nulls:
-                print("Warning: drop_nulls and fill_nulls are ignored when train=False")
+                print(
+                    "Warning: drop_nulls and fill_nulls are ignored when train=False"
+                )
                 df_pool = df_pool.fillna("")
 
         # filter timestamp by index

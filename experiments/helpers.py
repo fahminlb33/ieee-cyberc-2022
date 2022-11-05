@@ -68,6 +68,7 @@ def plot_distributions(train_prices: np.ndarray, test_prices: np.ndarray,
 
     return fig
 
+
 def plot_distributions2(test_prices: np.ndarray, predicted_prices: np.ndarray):
     fig, ax = plt.subplots(1, 2, figsize=(20, 5), sharey=True)
 
@@ -78,6 +79,7 @@ def plot_distributions2(test_prices: np.ndarray, predicted_prices: np.ndarray):
     ax[1].set_title("Predicted")
 
     return fig
+
 
 def plot_all(test_prices: np.ndarray,
              predicted_prices: np.ndarray,

@@ -25,15 +25,13 @@ from experiments.preprocessor import DataPreprocessorV2
 if __name__ == "__main__":
     # create CLI parser
     cli_parser = argparse.ArgumentParser(description='CatBoost Experiments')
-    cli_parser.add_argument(
-        'model_path',
-        type=str,
-        help=
-        'Path to CatBoost model (CBM).'
-    )
-    cli_parser.add_argument('input_path',
+    cli_parser.add_argument('model_path',
                             type=str,
-                            help='Input data to predict without the Price column as CSV file.')
+                            help='Path to CatBoost model (CBM).')
+    cli_parser.add_argument(
+        'input_path',
+        type=str,
+        help='Input data to predict without the Price column as CSV file.')
     cli_parser.add_argument('output_path',
                             type=str,
                             help='Prediction output path to CSV file.')
@@ -44,7 +42,7 @@ if __name__ == "__main__":
     # --- step 1 - load and preprocess dataset
     print(f"Input dataset: {args.input_path}")
     df = pd.read_csv(args.input_path, parse_dates=["Time"])
-    
+
     # preprocess data
     print("Preprocessing data...")
     preprocessor = DataPreprocessorV2(
@@ -59,14 +57,15 @@ if __name__ == "__main__":
 
     # create dataset pool
     test_pool = Pool(df_input["X"],
-                        df_input["y"],
-                        cat_features=df_input["cat_names_index"], timestamp=df_input["timestamp"])
+                     df_input["y"],
+                     cat_features=df_input["cat_names_index"],
+                     timestamp=df_input["timestamp"])
 
     # --- step 2 - load model and run prediction
     print(f"Loading model: {args.model_path}")
     model = CatBoostRegressor()
     model.load_model(args.model_path)
-    
+
     # run predictions
     print("Running predictions...")
     predicted = model.predict(test_pool)
@@ -74,7 +73,8 @@ if __name__ == "__main__":
 
     # save predictions
     print("Writing predictions...")
-    write_preds = np.column_stack((df["Id"].values, predicted_unscaled.flatten()))
+    write_preds = np.column_stack(
+        (df["Id"].values, predicted_unscaled.flatten()))
     np.savetxt(args.output_path, write_preds, delimiter=",", fmt=["%d", "%s"])
 
     print("Prediction completed!")

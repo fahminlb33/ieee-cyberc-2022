@@ -70,10 +70,12 @@ if __name__ == "__main__":
         # create dataset pool
         train_pool = Pool(df_train_p["X"],
                           df_train_p["y"],
-                          cat_features=df_train_p["cat_names_index"], timestamp=df_train_p["timestamp"])
+                          cat_features=df_train_p["cat_names_index"],
+                          timestamp=df_train_p["timestamp"])
         test_pool = Pool(df_test_p["X"],
                          df_test_p["y"],
-                         cat_features=df_test_p["cat_names_index"], timestamp=df_test_p["timestamp"])
+                         cat_features=df_test_p["cat_names_index"],
+                         timestamp=df_test_p["timestamp"])
 
         # train parameters
         train_params = {
