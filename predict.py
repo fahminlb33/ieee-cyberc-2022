@@ -16,6 +16,7 @@
 
 import argparse
 
+import numpy as np
 import pandas as pd
 from catboost import CatBoostRegressor, Pool
 
@@ -73,10 +74,7 @@ if __name__ == "__main__":
 
     # save predictions
     print("Writing predictions...")
-    df_pred = pd.DataFrame({
-        "id": df["Id"],
-        "prediction": predicted_unscaled.flatten()
-    })
-    df_pred.to_csv(args.output_path, index=False)
+    write_preds = np.column_stack((df["Id"].values, predicted_unscaled.flatten()))
+    np.savetxt(args.output_path, write_preds, delimiter=",", fmt=["%d", "%s"])
 
     print("Prediction completed!")
