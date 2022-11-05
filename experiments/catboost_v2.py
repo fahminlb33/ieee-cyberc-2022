@@ -22,8 +22,8 @@ import mlflow
 import pandas as pd
 from catboost import CatBoostRegressor, Pool
 
-from helpers import calculate_metrics, plot_scatterplot, plot_distributions
-from preprocessor import DataPreprocessor
+from preprocessor import DataPreprocessorV2
+from helpers import calculate_metrics, plot_scatterplot, plot_distributions2
 
 if __name__ == "__main__":
     # get run name
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     args = vars(arg_parser.parse_args())
 
     # setup mlflow experiment
-    mlflow.set_experiment("catboost2")
+    mlflow.set_experiment("catboost_v2")
 
     # load data
     print("Loading data...")
@@ -43,14 +43,12 @@ if __name__ == "__main__":
 
     # preprocess data
     print("Preprocessing data...")
-    preprocessor = DataPreprocessor(timeframe=['2017-01-01', '2018-12-31'],
-                                    drop_columns=["Lat", "Lon", "Orient"],
-                                    drop_nulls=True,
-                                    scale=True,
-                                    remove_outliers=None,
-                                    moving_average=None,
-                                    moving_average_groupby=None)
-    preprocessor.fit(df_train, df_test)
+    preprocessor = DataPreprocessorV2(
+        timeframe=[],
+        drop_columns=["Id", "Time", "Lat", "Lon", "Orient"],
+        drop_nulls=True,
+        scale=False)
+    preprocessor.fit(df_train)
 
     # start mlflow experiment
     with mlflow.start_run(run_name=args['name']):
@@ -58,32 +56,38 @@ if __name__ == "__main__":
         mlflow.log_param("timeframe", preprocessor.timeframe)
         mlflow.log_param("drop_columns", preprocessor.drop_columns)
         mlflow.log_param("drop_nulls", preprocessor.drop_nulls)
+        mlflow.log_param("fill_nulls", preprocessor.fill_nulls)
         mlflow.log_param("scale", preprocessor.scale)
         mlflow.log_param("remove_outliers", preprocessor.remove_outliers)
-        mlflow.log_param("moving_average", preprocessor.moving_average)
-        mlflow.log_param("moving_average_groupby",
-                         preprocessor.moving_average_groupby)
+
+        # transform data
+        df_train_p = preprocessor.transform(df_train, train=True)
+        df_test_p = preprocessor.transform(df_test, train=False)
+
+        print("TRAIN:", len(df_train_p["dataframe"]))
+        print("TEST:", len(df_test_p["dataframe"]))
 
         # create dataset pool
-        train_pool = Pool(preprocessor.X_train,
-                          preprocessor.y_train,
-                          cat_features=preprocessor.categorical_column_indexes)
-        test_pool = Pool(preprocessor.X_test,
-                         preprocessor.y_test,
-                         cat_features=preprocessor.categorical_column_indexes)
+        train_pool = Pool(df_train_p["X"],
+                          df_train_p["y"],
+                          cat_features=df_train_p["cat_names_index"], timestamp=df_train_p["timestamp"])
+        test_pool = Pool(df_test_p["X"],
+                         df_test_p["y"],
+                         cat_features=df_test_p["cat_names_index"], timestamp=df_test_p["timestamp"])
 
         # train parameters
         train_params = {
             "random_seed": 42,
             "task_type": "GPU",
-            "loss_function":
-            "RMSE",  # RMSE, Tweedie:variance_power=1.9, Poisson
-            "one_hot_max_size": None,  # None, 255
-            "iterations": 1000,  # 1000
-            "learning_rate": None,  # None, 0.03, 0.1
-            "depth": None,  # 6, 8
-            "l2_leaf_reg": None,  # 3.0
-            "bootstrap_type": "Bayesian",  # Bayesian
+            "loss_function": "RMSE",
+            "grow_policy": "Depthwise",
+            "iterations": 1000,
+            "learning_rate": None,
+            "border_count": 254,
+            "depth": 16,
+            "l2_leaf_reg": 1.5,
+            "bootstrap_type": "Bayesian",
+            "has_time": True,
         }
         mlflow.log_params(train_params)
 
@@ -93,28 +97,25 @@ if __name__ == "__main__":
         model.fit(train_pool)
 
         # save model artifact
-        feature_importances = {
-            name: value
-            for name, value in zip(preprocessor.columns,
-                                   model.feature_importances_)
-        }
+        feature_importances = dict(
+            zip(df_train_p["columns"], model.feature_importances_))
         mlflow.log_text(json.dumps(feature_importances),
                         "feature_importances.json")
         mlflow.log_text(json.dumps(model.get_all_params()),
                         "model_params.json")
-        mlflow.catboost.log_model(model, "model")
+        # mlflow.catboost.log_model(model, "model")
 
         # evaluate model
         print("Evaluating model...")
         predicted = model.predict(test_pool)
-        predicted_unscaled = preprocessor.inverse_transform_price(
+        predicted_unscaled = preprocessor.unscale_price(
             predicted.reshape(-1, 1))
-        y_true_unscaled = preprocessor.inverse_transform_price(
-            preprocessor.y_test.reshape(-1, 1))
+        y_true_unscaled = df_test["Price"].values.reshape(-1, 1)
 
         # save metrics
-        mlflow.log_metrics(
-            calculate_metrics(y_true_unscaled, predicted_unscaled))
+        metrics = calculate_metrics(y_true_unscaled, predicted_unscaled)
+        print(metrics)
+        mlflow.log_metrics(metrics)
 
         # save plots
         fig_scatter = plot_scatterplot(y_true_unscaled, predicted_unscaled)
@@ -125,8 +126,5 @@ if __name__ == "__main__":
                                        logy=True)
         mlflow.log_figure(fig_scatter, "scatterplot-log.png")
 
-        train_prices = preprocessor.inverse_transform_price(
-            preprocessor.y_train.reshape(-1, 1))
-        fig_dist = plot_distributions(train_prices, y_true_unscaled,
-                                      predicted_unscaled)
+        fig_dist = plot_distributions2(y_true_unscaled, predicted_unscaled)
         mlflow.log_figure(fig_dist, "distributions.png")

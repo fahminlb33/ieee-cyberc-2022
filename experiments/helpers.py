@@ -1,3 +1,19 @@
+"""
+   Copyright 2022 Fahmi Noor Fiqri
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 import numpy as np
 
 import seaborn as sns
@@ -22,11 +38,11 @@ def calculate_metrics(y_true, y_pred):
 
 def print_metrics(y_true, y_pred):
     metrics = calculate_metrics(y_true, y_pred)
-    print("Min: ", metrics["min"])
-    print("Max: ", metrics["max"])
-    print("R2: ", metrics["r2"])
-    print("MAPE: ", metrics["mape"])
-    print("Log MAE: ", metrics["log_mae"])
+    print("Min: ", np.round(metrics["min"], 4))
+    print("Max: ", np.round(metrics["max"], 4))
+    print("R2: ", np.round(metrics["r2"], 4))
+    print("MAPE: ", np.round(metrics["mape"], 4))
+    print("Log MAE: ", np.round(metrics["log_mae"], ))
 
 
 def plot_scatterplot(y_true: np.ndarray, y_pred: np.ndarray, logy=False):
@@ -52,6 +68,16 @@ def plot_distributions(train_prices: np.ndarray, test_prices: np.ndarray,
 
     return fig
 
+def plot_distributions2(test_prices: np.ndarray, predicted_prices: np.ndarray):
+    fig, ax = plt.subplots(1, 2, figsize=(20, 5), sharey=True)
+
+    sns.histplot(test_prices.flatten(), ax=ax[0], bins=50)
+    ax[0].set_title("Test Data")
+
+    sns.histplot(predicted_prices.flatten(), ax=ax[1], bins=50)
+    ax[1].set_title("Predicted")
+
+    return fig
 
 def plot_all(test_prices: np.ndarray,
              predicted_prices: np.ndarray,
